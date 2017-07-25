@@ -1,0 +1,280 @@
+
+商品售货系统设计案例
+现有一个商品的数据、记录客户及其购物情况，由下三张表组成
+商品goods（商品号goodsid,商品名goodsname,单价untiprice,商品类别category，供应商provider）
+客户customer（客户号customerid，姓名name,住址address，电邮email,性别sex，身份证cardid）
+购买purchase（客户号customerid,商品号goodsid，购买数量nums）
+1、建表，每个表的主外键，客户的姓名不能为空值；单价必须大于0，购买数量必须在1到30之间；电邮不能重复；客户的性别必须是男或女，默认是男；
+--- 商品表
+create table goods(
+       goodsid number primary key,
+       goodsname varchar2(50),
+       untiprice number check(untiprice > 0),
+       category varchar2(50),
+       provider varchar2(50)
+);
+
+-- 客户表
+create table customer(
+       customerid number primary key,
+       name varchar2(50) not null,
+       address varchar2(250),
+       email varchar2(50) unique,
+       sex char(2)  default '男' check(sex='男' or sex='女'),
+       cardid varchar2(18)
+);
+
+--购买表
+create table purchase(
+       customerid number references customer(customerid),
+       goodsid number references goods(goodsid),
+       nums number check(nums>=1 and nums <=30)
+);
+
+
+练习：查找出奖金查过其工资的雇员的姓名、工资、奖金和工种的信息。
+select ename,sal,comm,job from emp
+where comm > sal;
+
+
+练习：
+查找出不是30号部门中的所有经理的所有信息。
+select * from emp
+where deptno !=30 and job='MANAGER';
+
+
+练习：以上例子，还有哪种写法？
+select *
+from emp
+where job != 'MANAGER' and job != 'CLERK' and deptno = 20
+
+
+练习：查找出工资在2500到3500之外的职工姓名、工种和工资
+select ename,job,sal from emp
+where sal not between 2500 and 3500;
+
+练习：查询出工资分别是1500，2500，3000的分析员或推销员的姓名、工种、工资和所在部门号
+select ename,job,sal,deptno from emp
+where job =ANY('ANALYST','SALESMAN') and sal in(1500,2500,3000);
+
+
+练习：
+1、查找出所有工种以'MANAG'开头的职工姓名、工种和工资
+select ename,job,sal,deptno from emp
+where job like 'MANAG%';
+
+2、查找出所有姓名以'ALLE'开头，且长度为5为的职工姓名、工种和工资
+select ename,job,sal,deptno from emp
+where ename like 'ALLE_';
+
+
+
+练习：查找出没有奖金的员工的姓名、工种、工资和部门号
+select ename,job,sal,deptno from emp
+where comm is null;
+
+
+练习：
+1、查找出工资高于1000元的职工的姓名、工种、工资和部门号，并按部门号由小到大排序显示
+select ename,job,sal,deptno from emp
+where sal > 1000
+order by deptno;
+
+2、查找出奖金超过本人基本工资3%的职工的姓名，工资，奖金，奖金与工资的比例，并按其比例由高到低显示
+select ename,sal,comm,comm/sal from emp
+where comm > sal*0.03
+order by comm/sal desc;
+
+
+3、按工种升序，而同工种按工资降序排列显示全部职工的姓名，工种，工资。
+select ename,job,sal from emp
+order by job,sal desc;
+
+
+练习：
+1、对20号部门中经理或所有销售人员提高15%的工资。
+update emp
+set sal = 1.15*sal
+where deptno=20 and job in('MANAGER','SALESMAN');
+
+
+练习：计算全部销售员的年平均报酬。
+select avg(sal+nvl(comm,0))*12 "year averasal" from emp
+where job='SALESMAN';
+
+
+练习：统计班上各组的人数。
+select groupID,count(*) from class
+group by groupID;
+
+
+
+练习1：查询出至少有两名秘书的所有部门的部门号，并按人数降序排序。
+select deptno,count(*) from emp
+where job='CLERK'
+group by deptno
+having count(*) >= 2
+order by count(*);
+
+练习2：查询出所有经理和销售人员的年平均工资，并按年平均工资降序排序。
+select job,avg((sal+nvl(comm,0))*12) from emp
+where job in('MANAGER','SALESMAN')
+group by job
+order by avg((sal+nvl(comm,0))*12) desc
+
+练习：查询部门号是20,30,40的职工的有关情况。
+select d.*,e.* from emp e,dept d
+where d.deptno = e.deptno
+and d.deptno in(20,30,40);
+
+
+练习：列出无雇员的部门的情况。
+select d.deptno,d.dname,d.loc
+from emp e,deptno d
+where d.deptno=e.deptno(+) and e.empno IS NULL;
+
+
+1、查找出工资比"SCOTT"工资高的职工的名字，工种，工资和所在的部门号，并按工资升序排序。
+
+
+select ename,job,sal,deptno from emp
+where sal > (select sal from emp where ename = 'SCOTT')
+order by sal;
+
+2、查找出工资比"SCOTT"高，并且在"NEW YORK"工作的职工的名字，工种，工资和所在的部门号。
+select e.ename,e.job,e.sal,d.deptno from emp e,dept d
+where d.loc='NEW YORK' and e.deptno = d.deptno and sal > (select sal from emp where ename = 'SCOTT');
+
+3、查找出具有最高月工资的雇员的姓名、工种和工资。
+select ename,job,sal,deptno from emp
+where sal = (select max(sal) from emp);
+
+4、查找出在"CHICAGO"工作的职工的姓名、工种和工资。
+select ename,job,sal from emp
+where deptno = (select deptno from dept where loc = 'CHICAGO');
+
+
+练习：查找出部门10中的工种与部门30中任何工种都不相同的职工的姓名与工种。
+select ename,job from emp
+where deptno = 10 and job not in(select job from emp where deptno = 30);
+
+查找出部门10中的工种相同的职工的姓名与工种。
+select e.deptno,e.job, e.ename
+  from emp e
+ where e.deptno = 10
+   and e.job in (select e.job
+                   from emp e
+                  where e.deptno = 10
+                  group by e.job
+                 having count(e.job) >= 2)
+                 
+练习：查找出其他部门比30号部门中任一职工工资高的职工的信息。
+select * from emp where deptno !=30 and
+sal >ANY(select sal from emp where deptno = 30);
+
+
+练习：查找出工种在部门10中没有的其他部门职工的姓名、工种和工资信息。
+select ename,job,sal from emp
+where job <>All(select job from emp where deptno = 10);
+
+1、显示高于自己部门平均工资的员工的信息
+select e.*
+from emp e,(select deptno, round(avg(sal+nvl(comm,0)),2) avgsal from emp group by deptno) t
+where e.deptno = t.deptno and e.sal > t.avgsal;
+
+2、列出工资大于本部门平均工资的员工姓名和部门号及统计此部门的人数
+结果显示如下：
+EMPNAME		DEPID		部门人数
+ZHANGSAN	1		    15
+LISI		  2		    10
+
+答案：
+select e.员工姓名,e.部门号,t.部门人数 from emp e,(select 部门号,avg(工资) 部门平均工资,count(*) 部门人数 from emp group by 部门号) t
+where e.部门号=t.部门号 and e.sal > t.部门平均工资
+
+
+练习：
+1、查找出10号部门中与销售部门中任何职工工种相同的职工的信息。
+select * from emp
+where deptno = 10 and
+job IN(select job from emp
+where deptno=(select deptno from dept where dname = 'SALES'));
+
+2、
+姓名          课程           成绩
+张三           英语          90
+张三           语文          94
+张三           数学          95
+李四           英语          88
+李四           语文          99 
+李四           数学          96
+。。。。。。。
+。。。。。。。
+。。。。。。。
+找出语文，数学，英语三科成绩都大于或等于90分的学生姓名。
+
+select name from 表 where 数学>=90 and name = (select name from 表 where 语文>=90 and name =(select name from 表 where 英语>=90));
+
+
+***********************************课后综合练习****************************************************
+题目一：
+表A包含以下数据：
+1
+2
+3
+4
+
+表B包含以下数据：
+A
+B
+1
+2
+
+要求：把两个表中，冗余的数据删掉(或者说，把A表中，与B表重复的数据删掉)
+
+答案：
+delete from A
+where A.列名 IN
+(select A.列名 from A,B where A.列名=B.列名);
+
+
+数据构造：
+create table A
+(
+  aaa CHAR(5)
+);
+
+create table B
+(
+  bbb CHAR(5)
+);
+
+insert into A VALUES(1);
+insert into A VALUES(2);
+insert into A VALUES(3);
+insert into A VALUES(4);
+
+insert into B VALUES('A');
+insert into B VALUES('B');
+insert into B VALUES('1');
+insert into B VALUES('2');
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
